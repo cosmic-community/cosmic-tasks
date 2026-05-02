@@ -46,7 +46,8 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       id: m.id,
       slug: m.slug,
       title: m.title,
-      firstName: m.title.trim().split(' ')[0],
+      // Fallback to full title if split returns undefined (noUncheckedIndexedAccess)
+      firstName: m.title.trim().split(' ')[0] ?? m.title.trim(),
     }))
   } catch (error) {
     if (hasStatus(error) && error.status === 404) return []

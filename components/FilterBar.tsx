@@ -10,10 +10,11 @@ function getMemberColor(firstName: string): { active: string; inactive: string; 
     { active: 'bg-emerald-500 text-white border-emerald-500', inactive: 'text-emerald-400 border-emerald-500/40 hover:border-emerald-400', avatar: 'bg-emerald-500' },
     { active: 'bg-pink-500 text-white border-pink-500', inactive: 'text-pink-400 border-pink-500/40 hover:border-pink-400', avatar: 'bg-pink-500' },
     { active: 'bg-amber-500 text-white border-amber-500', inactive: 'text-amber-400 border-amber-500/40 hover:border-amber-400', avatar: 'bg-amber-500' },
-  ]
+  ] as const
   let hash = 0
   for (let i = 0; i < firstName.length; i++) hash += firstName.charCodeAt(i)
-  return colors[hash % colors.length]
+  // Fallback to first color (guaranteed to exist) since noUncheckedIndexedAccess returns T | undefined
+  return colors[hash % colors.length] ?? colors[0]
 }
 
 interface FilterBarProps {
