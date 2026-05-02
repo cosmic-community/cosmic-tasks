@@ -30,7 +30,7 @@ This application was built using the following prompts to generate the content s
 
 ### Code Generation Prompt
 
-> "A private password-protected Kanban board for managing tasks. Features: password protection on all pages, Kanban columns (To Do, In Progress, Done), task cards showing title, assignee, priority, due date, and notes, filter by assignee (Tony / Jeff), drag and drop to update task status (updates Cosmic CMS in real time), priority color coding (Urgent=red, High=orange, Medium=yellow, Low=green), clickable CMS dashboard links on each card using format https://app.cosmicjs.com/cosmic-crm-production/objects/:object_id. Reads and writes tasks from Cosmic CMS object type "tasks". Password stored as environment variable APP_PASSWORD. App name: cosmic-tasks."
+> "A private password-protected Kanban board for managing tasks. Features: password protection on all pages, Kanban columns (To Do, In Progress, Done), task cards showing title, assignee, priority, due date, and notes, filter by assignee, drag and drop to update task status (updates Cosmic CMS in real time), priority color coding (Urgent=red, High=orange, Medium=yellow, Low=green), clickable CMS dashboard links on each card. Reads and writes tasks from Cosmic CMS object type "tasks". Password stored as environment variable APP_PASSWORD. App name: cosmic-tasks."
 
 The app has been tailored to work with your existing Cosmic content structure and includes all the features requested above.
 
