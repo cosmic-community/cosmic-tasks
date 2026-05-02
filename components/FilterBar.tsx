@@ -2,19 +2,29 @@
 
 import type { TeamMember } from '@/types'
 
-// Generate a consistent color based on the member's name
-function getMemberColor(firstName: string): { active: string; inactive: string; avatar: string } {
-  const colors = [
-    { active: 'bg-violet-500 text-white border-violet-500', inactive: 'text-violet-400 border-violet-500/40 hover:border-violet-400', avatar: 'bg-violet-500' },
-    { active: 'bg-cyan-500 text-white border-cyan-500', inactive: 'text-cyan-400 border-cyan-500/40 hover:border-cyan-400', avatar: 'bg-cyan-500' },
-    { active: 'bg-emerald-500 text-white border-emerald-500', inactive: 'text-emerald-400 border-emerald-500/40 hover:border-emerald-400', avatar: 'bg-emerald-500' },
-    { active: 'bg-pink-500 text-white border-pink-500', inactive: 'text-pink-400 border-pink-500/40 hover:border-pink-400', avatar: 'bg-pink-500' },
-    { active: 'bg-amber-500 text-white border-amber-500', inactive: 'text-amber-400 border-amber-500/40 hover:border-amber-400', avatar: 'bg-amber-500' },
-  ] as const
+interface PaletteEntry {
+  color: string
+  border: string
+  activeBg: string
+  hoverBorder: string
+  avatar: string
+}
+
+const PALETTE: PaletteEntry[] = [
+  { color: 'text-violet-400', border: 'border-violet-500/40', activeBg: 'bg-violet-500', hoverBorder: 'hover:border-violet-400', avatar: 'bg-violet-500' },
+  { color: 'text-cyan-400', border: 'border-cyan-500/40', activeBg: 'bg-cyan-500', hoverBorder: 'hover:border-cyan-400', avatar: 'bg-cyan-500' },
+  { color: 'text-emerald-400', border: 'border-emerald-500/40', activeBg: 'bg-emerald-500', hoverBorder: 'hover:border-emerald-400', avatar: 'bg-emerald-500' },
+  { color: 'text-amber-400', border: 'border-amber-500/40', activeBg: 'bg-amber-500', hoverBorder: 'hover:border-amber-400', avatar: 'bg-amber-500' },
+  { color: 'text-pink-400', border: 'border-pink-500/40', activeBg: 'bg-pink-500', hoverBorder: 'hover:border-pink-400', avatar: 'bg-pink-500' },
+]
+
+const DEFAULT_PALETTE: PaletteEntry = { color: 'text-slate-400', border: 'border-slate-500/40', activeBg: 'bg-slate-500', hoverBorder: 'hover:border-slate-400', avatar: 'bg-slate-500' }
+
+// Generate a consistent palette entry based on the member's name
+export function getMemberColor(firstName: string): PaletteEntry {
   let hash = 0
   for (let i = 0; i < firstName.length; i++) hash += firstName.charCodeAt(i)
-  // Fallback to first color (guaranteed to exist) since noUncheckedIndexedAccess returns T | undefined
-  return colors[hash % colors.length] ?? colors[0]
+  return PALETTE[hash % PALETTE.length] ?? DEFAULT_PALETTE
 }
 
 interface FilterBarProps {
@@ -45,18 +55,20 @@ export default function FilterBar({ teamMembers, selectedMemberId, onSelectMembe
 
       {/* Dynamic team member buttons */}
       {teamMembers.map((member) => {
-        const colors = getMemberColor(member.firstName)
+        const palette = getMemberColor(member.firstName)
         const isActive = selectedMemberId === member.id
         return (
           <button
             key={member.id}
             onClick={() => onSelectMember(member.id)}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all bg-brand-card ${
-              isActive ? colors.active : colors.inactive
+              isActive
+                ? `${palette.activeBg} text-white border-transparent`
+                : `${palette.color} ${palette.border} ${palette.hoverBorder}`
             }`}
           >
             <div
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${colors.avatar}`}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${palette.avatar}`}
             >
               {member.firstName.slice(0, 1).toUpperCase()}
             </div>

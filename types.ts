@@ -72,7 +72,7 @@ export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): strin
 
   // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...', slug: '...' }
   if (typeof assigned_to === 'object' && 'title' in assigned_to) {
-    const title = assigned_to.title.trim()
+    const title = (assigned_to.title ?? '').trim()
     if (!title) return ''
     // Return first word of title (e.g. 'Tony Spiro' -> 'Tony')
     return title.split(' ')[0] ?? title
