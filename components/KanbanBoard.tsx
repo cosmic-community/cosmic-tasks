@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -12,9 +12,9 @@ import {
   DragOverlay,
   closestCorners,
 } from '@dnd-kit/core'
-import { arrayMove } from '@dnd-kit/sortable'
 import type { Task, ColumnId } from '@/types'
-import { COLUMNS, ASSIGNEES, getAssigneeName } from '@/types'
+import { COLUMNS } from '@/types'
+import { getAssigneeName } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 import KanbanColumn from '@/components/KanbanColumn'
 import TaskCard from '@/components/TaskCard'
@@ -35,6 +35,20 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
       activationConstraint: { distance: 8 },
     })
   )
+
+  // Derive unique assignees dynamically from actual task data
+  const assignees = useMemo(() => {
+    const seen = new Set<string>()
+    const list: { name: string; color: string; bgColor: string }[] = []
+    for (const task of tasks) {
+      const name = getAssigneeName(task.metadata?.assigned_to)
+      if (name && !seen.has(name)) {
+        seen.add(name)
+        list.push({ name, color: '', bgColor: '' })
+      }
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name))
+  }, [tasks])
 
   const getTasksByColumn = useCallback(
     (columnId: ColumnId) => {
@@ -58,45 +72,30 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event
     if (!over) return
-
     const activeId = active.id as string
     const overId = over.id as string
-
     if (activeId === overId) return
-
     const activeTask = tasks.find((t) => t.id === activeId)
     if (!activeTask) return
-
-    // Check if over a column header
     const isOverColumn = COLUMNS.some((col) => col.id === overId)
-    if (isOverColumn) {
-      return
-    }
+    if (isOverColumn) return
   }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     setActiveTask(null)
-
     if (!over) return
-
     const activeId = active.id as string
     const overId = over.id as string
-
     if (activeId === overId) return
-
     const draggedTask = tasks.find((t) => t.id === activeId)
     if (!draggedTask) return
 
-    // Determine target column
     let targetColumn: ColumnId | null = null
-
-    // Check if dropped on a column
     const columnMatch = COLUMNS.find((col) => col.id === overId)
     if (columnMatch) {
       targetColumn = columnMatch.id
     } else {
-      // Dropped on another task — find that task's column
       const overTask = tasks.find((t) => t.id === overId)
       if (overTask) {
         const status = getMetafieldValue(overTask.metadata?.task_status) as ColumnId
@@ -107,7 +106,6 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     }
 
     if (!targetColumn) return
-
     const currentStatus = getMetafieldValue(draggedTask.metadata?.task_status)
     if (currentStatus === targetColumn) return
 
@@ -115,15 +113,11 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     setTasks((prev) =>
       prev.map((t) =>
         t.id === activeId
-          ? {
-              ...t,
-              metadata: { ...t.metadata, task_status: targetColumn as string },
-            }
+          ? { ...t, metadata: { ...t.metadata, task_status: targetColumn as string } }
           : t
       )
     )
 
-    // Persist to Cosmic
     setUpdatingTaskIds((prev) => new Set(prev).add(activeId))
     try {
       const res = await fetch(`/api/tasks/${activeId}`, {
@@ -131,19 +125,11 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task_status: targetColumn }),
       })
-
       if (!res.ok) {
-        // Revert on failure
         setTasks((prev) =>
           prev.map((t) =>
             t.id === activeId
-              ? {
-                  ...t,
-                  metadata: {
-                    ...t.metadata,
-                    task_status: currentStatus,
-                  },
-                }
+              ? { ...t, metadata: { ...t.metadata, task_status: currentStatus } }
               : t
           )
         )
@@ -154,13 +140,7 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
       setTasks((prev) =>
         prev.map((t) =>
           t.id === activeId
-            ? {
-                ...t,
-                metadata: {
-                  ...t.metadata,
-                  task_status: currentStatus,
-                },
-              }
+            ? { ...t, metadata: { ...t.metadata, task_status: currentStatus } }
             : t
         )
       )
@@ -180,8 +160,9 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
-      {/* Filter Bar */}
+      {/* Filter Bar - fully dynamic assignees */}
       <FilterBar
+        assignees={assignees}
         selectedAssignee={selectedAssignee}
         onSelectAssignee={setSelectedAssignee}
         taskCount={totalVisible}
@@ -207,9 +188,7 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
         </div>
 
         <DragOverlay>
-          {activeTask ? (
-            <TaskCard task={activeTask} isOverlay />
-          ) : null}
+          {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
         </DragOverlay>
       </DndContext>
 
