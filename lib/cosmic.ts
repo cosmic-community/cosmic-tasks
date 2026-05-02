@@ -1,5 +1,5 @@
 import { createBucketClient } from '@cosmicjs/sdk'
-import type { Task } from '@/types'
+import type { Task, TeamMember } from '@/types'
 
 export const cosmic = createBucketClient({
   bucketSlug: process.env.COSMIC_BUCKET_SLUG as string,
@@ -36,6 +36,24 @@ export async function getTasks(): Promise<Task[]> {
       .props(['id', 'slug', 'title', 'metadata', 'created_at', 'modified_at'])
       .depth(1)
     return response.objects as Task[]
+  } catch (error) {
+    if (hasStatus(error) && error.status === 404) return []
+    throw error
+  }
+}
+
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const response = await cosmic.objects
+      .find({ type: 'team-members' })
+      .props(['id', 'slug', 'title'])
+      .depth(0)
+    return (response.objects as Array<{ id: string; slug: string; title: string }>).map((m) => ({
+      id: m.id,
+      slug: m.slug,
+      title: m.title,
+      firstName: m.title.split(' ')[0] || m.title,
+    }))
   } catch (error) {
     if (hasStatus(error) && error.status === 404) return []
     throw error

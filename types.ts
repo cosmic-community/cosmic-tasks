@@ -18,6 +18,13 @@ export interface Task {
   modified_at: string
 }
 
+export interface TeamMember {
+  id: string
+  slug: string
+  title: string
+  firstName: string
+}
+
 export interface CosmicContact {
   id: string
   title: string
@@ -81,27 +88,18 @@ export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): strin
   // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...' }
   if (typeof assigned_to === 'object' && 'title' in assigned_to) {
     const title = assigned_to.title.trim()
-    // Try mapping full title to short name first
     if (TEAM_MEMBER_TITLE_TO_NAME[title]) return TEAM_MEMBER_TITLE_TO_NAME[title]
-    // Try ID mapping as fallback
     if ('id' in assigned_to && TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]) {
       return TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]
     }
-    // Return first word of title as last resort (e.g. 'Tony Spiro' -> 'Tony')
     return title.split(' ')[0]
   }
 
   if (typeof assigned_to === 'string') {
     const trimmed = assigned_to.trim()
     if (!trimmed) return ''
-
-    // Check if it's a known team member ID
     if (TEAM_MEMBER_ID_TO_NAME[trimmed]) return TEAM_MEMBER_ID_TO_NAME[trimmed]
-
-    // Check if it's a known full name
     if (TEAM_MEMBER_TITLE_TO_NAME[trimmed]) return TEAM_MEMBER_TITLE_TO_NAME[trimmed]
-
-    // Fall back to first word of the string
     return trimmed.split(' ')[0]
   }
 
