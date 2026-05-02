@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import type { Task } from '@/types'
-import { PRIORITY_CONFIG, getAssigneeName } from '@/types'
+import { PRIORITY_CONFIG, getAssigneeName, getAssigneeInitials } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 
 interface TaskModalProps {
@@ -69,7 +69,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
       : assignee === 'Jeff'
       ? 'bg-cyan-500'
       : 'bg-slate-600'
-  const initials = assignee ? assignee.slice(0, 2).toUpperCase() : '??'
+  const initials = getAssigneeInitials(task.metadata?.assigned_to)
 
   const statusColors: Record<string, string> = {
     'To Do': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',

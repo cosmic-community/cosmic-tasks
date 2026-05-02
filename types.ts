@@ -63,27 +63,43 @@ export const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: 
   Low: { label: 'Low', bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40' },
 }
 
+// Extracts the full name from assigned_to (before truncation to first name)
+function getAssigneeFullName(assigned_to: TaskMetadata['assigned_to']): string {
+  if (!assigned_to) return ''
+
+  if (typeof assigned_to === 'object' && 'title' in assigned_to) {
+    return (assigned_to.title ?? '').trim()
+  }
+
+  if (typeof assigned_to === 'string') {
+    return assigned_to.trim()
+  }
+
+  return ''
+}
+
 // Resolves assigned_to to a display name from various shapes:
 // - Resolved object from depth(1): { title, id, slug }
 // - Plain string (could be an ID or a name)
 // - null/undefined
 export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): string {
-  if (!assigned_to) return ''
+  const fullName = getAssigneeFullName(assigned_to)
+  if (!fullName) return ''
+  // Return first word of the full name (e.g. 'Tony Spiro' -> 'Tony')
+  return fullName.split(' ')[0] ?? fullName
+}
 
-  // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...', slug: '...' }
-  if (typeof assigned_to === 'object' && 'title' in assigned_to) {
-    const title = (assigned_to.title ?? '').trim()
-    if (!title) return ''
-    // Return first word of title (e.g. 'Tony Spiro' -> 'Tony')
-    return title.split(' ')[0] ?? title
-  }
-
-  if (typeof assigned_to === 'string') {
-    const trimmed = assigned_to.trim()
-    if (!trimmed) return ''
-    // Fall back to first word of the string
-    return trimmed.split(' ')[0] ?? trimmed
-  }
-
-  return ''
+// Returns the initials derived from the full assigned_to name.
+// e.g. 'Tony Spiro' -> 'TS', 'Jeff Hovinga' -> 'JH'
+export function getAssigneeInitials(assigned_to: TaskMetadata['assigned_to']): string {
+  const fullName = getAssigneeFullName(assigned_to)
+  if (!fullName) return '??'
+  const parts = fullName.split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '??'
+  // Take the first letter of each word (up to 2)
+  return parts
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 }

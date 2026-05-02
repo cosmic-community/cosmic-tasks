@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '@/types'
-import { PRIORITY_CONFIG, getAssigneeName } from '@/types'
+import { PRIORITY_CONFIG, getAssigneeName, getAssigneeInitials } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 
 interface TaskCardProps {
@@ -59,7 +59,7 @@ export default function TaskCard({ task, isOverlay, isUpdating, onOpenModal }: T
   const overdue = isOverdue(dueDate)
   const formattedDate = formatDate(dueDate)
 
-  const initials = assignee ? assignee.slice(0, 2).toUpperCase() : '??'
+  const initials = getAssigneeInitials(task.metadata?.assigned_to)
   const assigneeColor = assignee === 'Tony' ? 'bg-violet-500' : assignee === 'Jeff' ? 'bg-cyan-500' : 'bg-slate-600'
 
   if (isDragging && !isOverlay) {
