@@ -6,7 +6,7 @@ export interface TaskMetadata {
   task_status?: { key: string; value: string } | string
   due_date?: string
   notes?: string
-  assigned_to?: string
+  assigned_to?: { title: string; id: string; slug: string } | string | null
 }
 
 export interface Task {
@@ -57,4 +57,12 @@ export const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: 
   Medium: { label: 'Medium', bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/40' },
   low: { label: 'Low', bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40' },
   Low: { label: 'Low', bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40' },
+}
+
+// Helper to safely extract assignee name from either string or object
+export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): string {
+  if (!assigned_to) return ''
+  if (typeof assigned_to === 'string') return assigned_to.trim()
+  if (typeof assigned_to === 'object' && 'title' in assigned_to) return assigned_to.title.trim()
+  return ''
 }
