@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -12,9 +12,8 @@ import {
   DragOverlay,
   closestCorners,
 } from '@dnd-kit/core'
-import type { Task, ColumnId } from '@/types'
+import type { Task, ColumnId, TeamMember } from '@/types'
 import { COLUMNS } from '@/types'
-import { getAssigneeName } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 import KanbanColumn from '@/components/KanbanColumn'
 import TaskCard from '@/components/TaskCard'
@@ -22,12 +21,23 @@ import FilterBar from '@/components/FilterBar'
 
 interface KanbanBoardProps {
   initialTasks: Task[]
+  teamMembers: TeamMember[]
 }
 
-export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
+// Resolve assigned_to field to a team member ID
+function getAssigneeId(assigned_to: Task['metadata']['assigned_to']): string {
+  if (!assigned_to) return ''
+  if (typeof assigned_to === 'object' && 'id' in assigned_to) {
+    return assigned_to.id
+  }
+  if (typeof assigned_to === 'string') return assigned_to
+  return ''
+}
+
+export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  const [selectedAssignee, setSelectedAssignee] = useState<string>('All')
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('All')
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set())
 
   const sensors = useSensors(
@@ -36,32 +46,18 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
     })
   )
 
-  // Derive unique assignees dynamically from actual task data
-  const assignees = useMemo(() => {
-    const seen = new Set<string>()
-    const list: { name: string; color: string; bgColor: string }[] = []
-    for (const task of tasks) {
-      const name = getAssigneeName(task.metadata?.assigned_to)
-      if (name && !seen.has(name)) {
-        seen.add(name)
-        list.push({ name, color: '', bgColor: '' })
-      }
-    }
-    return list.sort((a, b) => a.name.localeCompare(b.name))
-  }, [tasks])
-
   const getTasksByColumn = useCallback(
     (columnId: ColumnId) => {
       return tasks.filter((task) => {
         const status = getMetafieldValue(task.metadata?.task_status)
         const statusMatch = status === columnId
-        const assigneeName = getAssigneeName(task.metadata?.assigned_to)
-        const assigneeMatch =
-          selectedAssignee === 'All' || assigneeName === selectedAssignee
-        return statusMatch && assigneeMatch
+        if (!statusMatch) return false
+        if (selectedMemberId === 'All') return true
+        const assigneeId = getAssigneeId(task.metadata?.assigned_to)
+        return assigneeId === selectedMemberId
       })
     },
-    [tasks, selectedAssignee]
+    [tasks, selectedMemberId]
   )
 
   function handleDragStart(event: DragStartEvent) {
@@ -99,13 +95,11 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
       const overTask = tasks.find((t) => t.id === overId)
       if (overTask) {
         const status = getMetafieldValue(overTask.metadata?.task_status) as ColumnId
-        if (COLUMNS.some((c) => c.id === status)) {
-          targetColumn = status
-        }
+        if (COLUMNS.some((c) => c.id === status)) targetColumn = status
       }
     }
-
     if (!targetColumn) return
+
     const currentStatus = getMetafieldValue(draggedTask.metadata?.task_status)
     if (currentStatus === targetColumn) return
 
@@ -160,11 +154,11 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
-      {/* Filter Bar - fully dynamic assignees */}
+      {/* Filter Bar - dynamic team members */}
       <FilterBar
-        assignees={assignees}
-        selectedAssignee={selectedAssignee}
-        onSelectAssignee={setSelectedAssignee}
+        teamMembers={teamMembers}
+        selectedMemberId={selectedMemberId}
+        onSelectMember={setSelectedMemberId}
         taskCount={totalVisible}
       />
 
@@ -198,8 +192,8 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
           <div className="text-4xl mb-3">📋</div>
           <p className="font-medium">No tasks found</p>
           <p className="text-sm mt-1">
-            {selectedAssignee !== 'All'
-              ? `No tasks assigned to ${selectedAssignee}`
+            {selectedMemberId !== 'All'
+              ? `No tasks assigned to ${teamMembers.find((m) => m.id === selectedMemberId)?.firstName ?? 'this person'}`
               : 'No tasks in Cosmic CMS yet'}
           </p>
         </div>

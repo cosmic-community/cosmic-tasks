@@ -1,17 +1,6 @@
 'use client'
 
-interface Assignee {
-  name: string
-  color: string
-  bgColor: string
-}
-
-interface FilterBarProps {
-  assignees: Assignee[]
-  selectedAssignee: string
-  onSelectAssignee: (assignee: string) => void
-  taskCount: number
-}
+import type { TeamMember } from '@/types'
 
 interface PaletteEntry {
   color: string
@@ -31,11 +20,21 @@ const PALETTE: PaletteEntry[] = [
 
 const DEFAULT_PALETTE: PaletteEntry = { color: 'text-slate-400', border: 'border-slate-500/40', activeBg: 'bg-slate-500', hoverBorder: 'hover:border-slate-400', avatar: 'bg-slate-500' }
 
-export function getAssigneeColor(name: string, index: number): PaletteEntry {
-  return PALETTE[index % PALETTE.length] ?? DEFAULT_PALETTE
+// Generate a consistent palette entry based on the member's name
+export function getMemberColor(firstName: string): PaletteEntry {
+  let hash = 0
+  for (let i = 0; i < firstName.length; i++) hash += firstName.charCodeAt(i)
+  return PALETTE[hash % PALETTE.length] ?? DEFAULT_PALETTE
 }
 
-export default function FilterBar({ assignees, selectedAssignee, onSelectAssignee, taskCount }: FilterBarProps) {
+interface FilterBarProps {
+  teamMembers: TeamMember[]
+  selectedMemberId: string
+  onSelectMember: (memberId: string) => void
+  taskCount: number
+}
+
+export default function FilterBar({ teamMembers, selectedMemberId, onSelectMember, taskCount }: FilterBarProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -44,9 +43,9 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
 
       {/* All button */}
       <button
-        onClick={() => onSelectAssignee('All')}
+        onClick={() => onSelectMember('All')}
         className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-          selectedAssignee === 'All'
+          selectedMemberId === 'All'
             ? 'bg-brand-accent text-white border-brand-accent'
             : 'text-slate-400 border-brand-border hover:border-brand-accent/60 bg-brand-card'
         }`}
@@ -54,14 +53,14 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
         All
       </button>
 
-      {/* Dynamic assignee buttons */}
-      {assignees.map((assignee, index) => {
-        const palette: PaletteEntry = PALETTE[index % PALETTE.length] ?? DEFAULT_PALETTE
-        const isActive = selectedAssignee === assignee.name
+      {/* Dynamic team member buttons */}
+      {teamMembers.map((member) => {
+        const palette = getMemberColor(member.firstName)
+        const isActive = selectedMemberId === member.id
         return (
           <button
-            key={assignee.name}
-            onClick={() => onSelectAssignee(assignee.name)}
+            key={member.id}
+            onClick={() => onSelectMember(member.id)}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all bg-brand-card ${
               isActive
                 ? `${palette.activeBg} text-white border-transparent`
@@ -71,9 +70,9 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
             <div
               className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${palette.avatar}`}
             >
-              {assignee.name.slice(0, 1).toUpperCase()}
+              {member.firstName.slice(0, 1).toUpperCase()}
             </div>
-            {assignee.name}
+            {member.firstName}
           </button>
         )
       })}

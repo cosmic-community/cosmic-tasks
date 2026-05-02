@@ -1,6 +1,8 @@
 import { createBucketClient } from '@cosmicjs/sdk'
 import type { Task, TeamMember } from '@/types'
 
+export type { TeamMember }
+
 export const cosmic = createBucketClient({
   bucketSlug: process.env.COSMIC_BUCKET_SLUG as string,
   readKey: process.env.COSMIC_READ_KEY as string,
@@ -52,7 +54,8 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       id: m.id,
       slug: m.slug,
       title: m.title,
-      firstName: m.title.split(' ')[0] || m.title,
+      // Fallback to full title if split returns undefined (noUncheckedIndexedAccess)
+      firstName: m.title.trim().split(' ')[0] ?? m.title.trim(),
     }))
   } catch (error) {
     if (hasStatus(error) && error.status === 404) return []

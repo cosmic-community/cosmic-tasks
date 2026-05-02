@@ -52,23 +52,6 @@ export const COLUMNS: Column[] = [
   { id: 'Done', label: 'Done', color: 'text-green-400', dotColor: 'bg-green-400' },
 ]
 
-export const ASSIGNEES = ['Tony', 'Jeff'] as const
-export type Assignee = typeof ASSIGNEES[number]
-
-// Maps Cosmic team-member object IDs to display names
-export const TEAM_MEMBER_ID_TO_NAME: Record<string, string> = {
-  '69cd5f472815af68cf40dd6a': 'Tony',
-  '69cd5f4c2815af68cf40dd70': 'Jeff',
-}
-
-// Maps full names (as stored in CMS object titles) to display names
-export const TEAM_MEMBER_TITLE_TO_NAME: Record<string, string> = {
-  'Tony Spiro': 'Tony',
-  'Jeff Hovinga': 'Jeff',
-  'tony spiro': 'Tony',
-  'jeff hovinga': 'Jeff',
-}
-
 export const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   urgent: { label: 'Urgent', bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40' },
   Urgent: { label: 'Urgent', bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/40' },
@@ -80,28 +63,26 @@ export const PRIORITY_CONFIG: Record<string, { label: string; bg: string; text: 
   Low: { label: 'Low', bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/40' },
 }
 
-// Resolves assigned_to to a short display name ('Tony' or 'Jeff').
-// Handles: raw object ID string, resolved {title, id} object, or plain name string.
+// Resolves assigned_to to a display name from various shapes:
+// - Resolved object from depth(1): { title, id, slug }
+// - Plain string (could be an ID or a name)
+// - null/undefined
 export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): string {
   if (!assigned_to) return ''
 
-  // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...' }
+  // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...', slug: '...' }
   if (typeof assigned_to === 'object' && 'title' in assigned_to) {
     const title = (assigned_to.title ?? '').trim()
-    if (TEAM_MEMBER_TITLE_TO_NAME[title]) return TEAM_MEMBER_TITLE_TO_NAME[title] as string
-    if ('id' in assigned_to) {
-      const mapped = TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]
-      if (mapped) return mapped
-    }
-    return (title.split(' ')[0] ?? title)
+    if (!title) return ''
+    // Return first word of title (e.g. 'Tony Spiro' -> 'Tony')
+    return title.split(' ')[0] ?? title
   }
 
   if (typeof assigned_to === 'string') {
     const trimmed = assigned_to.trim()
     if (!trimmed) return ''
-    if (TEAM_MEMBER_ID_TO_NAME[trimmed]) return TEAM_MEMBER_ID_TO_NAME[trimmed] as string
-    if (TEAM_MEMBER_TITLE_TO_NAME[trimmed]) return TEAM_MEMBER_TITLE_TO_NAME[trimmed] as string
-    return (trimmed.split(' ')[0] ?? trimmed)
+    // Fall back to first word of the string
+    return trimmed.split(' ')[0] ?? trimmed
   }
 
   return ''
