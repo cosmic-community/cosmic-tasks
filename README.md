@@ -1,6 +1,6 @@
 # Cosmic Tasks — Private Kanban Board
 
-![App Preview](https://imgix.cosmicjs.com/0453a610-43f7-11f1-9f85-e7af420a77a5-agent-upload-1777486363341-fo8436.png?w=1200&h=630&fit=crop&auto=format,compress)
+![App Preview](https://imgix.cosmicjs.com/9695c2e0-45cf-11f1-a3ff-65bbafb72c6d-generated-1777689331193.jpg?w=1200&h=630&fit=crop&auto=format,compress)
 
 A secure, password-protected Kanban board for managing tasks stored in Cosmic CMS. Drag and drop tasks between columns, filter by assignee, and update task status in real time.
 
