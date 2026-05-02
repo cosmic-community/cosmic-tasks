@@ -13,16 +13,26 @@ interface FilterBarProps {
   taskCount: number
 }
 
-const PALETTE = [
+interface PaletteEntry {
+  color: string
+  border: string
+  activeBg: string
+  hoverBorder: string
+  avatar: string
+}
+
+const PALETTE: PaletteEntry[] = [
   { color: 'text-violet-400', border: 'border-violet-500/40', activeBg: 'bg-violet-500', hoverBorder: 'hover:border-violet-400', avatar: 'bg-violet-500' },
   { color: 'text-cyan-400', border: 'border-cyan-500/40', activeBg: 'bg-cyan-500', hoverBorder: 'hover:border-cyan-400', avatar: 'bg-cyan-500' },
   { color: 'text-emerald-400', border: 'border-emerald-500/40', activeBg: 'bg-emerald-500', hoverBorder: 'hover:border-emerald-400', avatar: 'bg-emerald-500' },
   { color: 'text-amber-400', border: 'border-amber-500/40', activeBg: 'bg-amber-500', hoverBorder: 'hover:border-amber-400', avatar: 'bg-amber-500' },
   { color: 'text-pink-400', border: 'border-pink-500/40', activeBg: 'bg-pink-500', hoverBorder: 'hover:border-pink-400', avatar: 'bg-pink-500' },
-] as const
+]
 
-export function getAssigneeColor(name: string, index: number) {
-  return PALETTE[index % PALETTE.length]
+const DEFAULT_PALETTE: PaletteEntry = { color: 'text-slate-400', border: 'border-slate-500/40', activeBg: 'bg-slate-500', hoverBorder: 'hover:border-slate-400', avatar: 'bg-slate-500' }
+
+export function getAssigneeColor(name: string, index: number): PaletteEntry {
+  return PALETTE[index % PALETTE.length] ?? DEFAULT_PALETTE
 }
 
 export default function FilterBar({ assignees, selectedAssignee, onSelectAssignee, taskCount }: FilterBarProps) {
@@ -46,7 +56,7 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
 
       {/* Dynamic assignee buttons */}
       {assignees.map((assignee, index) => {
-        const palette = PALETTE[index % PALETTE.length]
+        const palette: PaletteEntry = PALETTE[index % PALETTE.length] ?? DEFAULT_PALETTE
         const isActive = selectedAssignee === assignee.name
         return (
           <button

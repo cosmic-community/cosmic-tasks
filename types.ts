@@ -87,20 +87,21 @@ export function getAssigneeName(assigned_to: TaskMetadata['assigned_to']): strin
 
   // Resolved object from depth(1) — e.g. { title: 'Tony Spiro', id: '...' }
   if (typeof assigned_to === 'object' && 'title' in assigned_to) {
-    const title = assigned_to.title.trim()
-    if (TEAM_MEMBER_TITLE_TO_NAME[title]) return TEAM_MEMBER_TITLE_TO_NAME[title]
-    if ('id' in assigned_to && TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]) {
-      return TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]
+    const title = (assigned_to.title ?? '').trim()
+    if (TEAM_MEMBER_TITLE_TO_NAME[title]) return TEAM_MEMBER_TITLE_TO_NAME[title] as string
+    if ('id' in assigned_to) {
+      const mapped = TEAM_MEMBER_ID_TO_NAME[(assigned_to as { id: string }).id]
+      if (mapped) return mapped
     }
-    return title.split(' ')[0]
+    return (title.split(' ')[0] ?? title)
   }
 
   if (typeof assigned_to === 'string') {
     const trimmed = assigned_to.trim()
     if (!trimmed) return ''
-    if (TEAM_MEMBER_ID_TO_NAME[trimmed]) return TEAM_MEMBER_ID_TO_NAME[trimmed]
-    if (TEAM_MEMBER_TITLE_TO_NAME[trimmed]) return TEAM_MEMBER_TITLE_TO_NAME[trimmed]
-    return trimmed.split(' ')[0]
+    if (TEAM_MEMBER_ID_TO_NAME[trimmed]) return TEAM_MEMBER_ID_TO_NAME[trimmed] as string
+    if (TEAM_MEMBER_TITLE_TO_NAME[trimmed]) return TEAM_MEMBER_TITLE_TO_NAME[trimmed] as string
+    return (trimmed.split(' ')[0] ?? trimmed)
   }
 
   return ''
