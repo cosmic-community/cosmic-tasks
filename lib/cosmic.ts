@@ -29,6 +29,31 @@ function hasStatus(error: unknown): error is { status: number } {
   return typeof error === 'object' && error !== null && 'status' in error
 }
 
+export interface TeamMember {
+  id: string
+  slug: string
+  title: string
+  firstName: string
+}
+
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  try {
+    const response = await cosmic.objects
+      .find({ type: 'team-members' })
+      .props(['id', 'slug', 'title'])
+      .depth(0)
+    return (response.objects as { id: string; slug: string; title: string }[]).map((m) => ({
+      id: m.id,
+      slug: m.slug,
+      title: m.title,
+      firstName: m.title.trim().split(' ')[0],
+    }))
+  } catch (error) {
+    if (hasStatus(error) && error.status === 404) return []
+    throw error
+  }
+}
+
 export async function getTasks(): Promise<Task[]> {
   try {
     const response = await cosmic.objects

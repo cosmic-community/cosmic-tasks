@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import PasswordGate from '@/components/PasswordGate'
 import KanbanBoard from '@/components/KanbanBoard'
-import { getTasks } from '@/lib/cosmic'
+import { getTasks, getTeamMembers } from '@/lib/cosmic'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export default async function HomePage() {
     return <PasswordGate />
   }
 
-  const tasks = await getTasks()
+  const [tasks, teamMembers] = await Promise.all([getTasks(), getTeamMembers()])
 
   return (
     <main className="min-h-screen bg-brand-bg">
@@ -46,7 +46,7 @@ export default async function HomePage() {
       </header>
 
       {/* Board */}
-      <KanbanBoard initialTasks={tasks} />
+      <KanbanBoard initialTasks={tasks} teamMembers={teamMembers} />
     </main>
   )
 }

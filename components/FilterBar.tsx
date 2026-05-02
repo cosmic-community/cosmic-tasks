@@ -1,32 +1,29 @@
 'use client'
 
-interface Assignee {
-  name: string
-  color: string
-  bgColor: string
+import type { TeamMember } from '@/lib/cosmic'
+
+// Generate a consistent color based on the member's name
+function getMemberColor(firstName: string): { active: string; inactive: string; avatar: string } {
+  const colors = [
+    { active: 'bg-violet-500 text-white border-violet-500', inactive: 'text-violet-400 border-violet-500/40 hover:border-violet-400', avatar: 'bg-violet-500' },
+    { active: 'bg-cyan-500 text-white border-cyan-500', inactive: 'text-cyan-400 border-cyan-500/40 hover:border-cyan-400', avatar: 'bg-cyan-500' },
+    { active: 'bg-emerald-500 text-white border-emerald-500', inactive: 'text-emerald-400 border-emerald-500/40 hover:border-emerald-400', avatar: 'bg-emerald-500' },
+    { active: 'bg-pink-500 text-white border-pink-500', inactive: 'text-pink-400 border-pink-500/40 hover:border-pink-400', avatar: 'bg-pink-500' },
+    { active: 'bg-amber-500 text-white border-amber-500', inactive: 'text-amber-400 border-amber-500/40 hover:border-amber-400', avatar: 'bg-amber-500' },
+  ]
+  let hash = 0
+  for (let i = 0; i < firstName.length; i++) hash += firstName.charCodeAt(i)
+  return colors[hash % colors.length]
 }
 
 interface FilterBarProps {
-  assignees: Assignee[]
-  selectedAssignee: string
-  onSelectAssignee: (assignee: string) => void
+  teamMembers: TeamMember[]
+  selectedMemberId: string
+  onSelectMember: (memberId: string) => void
   taskCount: number
 }
 
-// Generate a consistent color for any assignee name
-const PALETTE = [
-  { color: 'text-violet-400', border: 'border-violet-500/40', activeBg: 'bg-violet-500', hoverBorder: 'hover:border-violet-400', avatar: 'bg-violet-500' },
-  { color: 'text-cyan-400', border: 'border-cyan-500/40', activeBg: 'bg-cyan-500', hoverBorder: 'hover:border-cyan-400', avatar: 'bg-cyan-500' },
-  { color: 'text-emerald-400', border: 'border-emerald-500/40', activeBg: 'bg-emerald-500', hoverBorder: 'hover:border-emerald-400', avatar: 'bg-emerald-500' },
-  { color: 'text-amber-400', border: 'border-amber-500/40', activeBg: 'bg-amber-500', hoverBorder: 'hover:border-amber-400', avatar: 'bg-amber-500' },
-  { color: 'text-pink-400', border: 'border-pink-500/40', activeBg: 'bg-pink-500', hoverBorder: 'hover:border-pink-400', avatar: 'bg-pink-500' },
-]
-
-export function getAssigneeColor(name: string, index: number) {
-  return PALETTE[index % PALETTE.length]
-}
-
-export default function FilterBar({ assignees, selectedAssignee, onSelectAssignee, taskCount }: FilterBarProps) {
+export default function FilterBar({ teamMembers, selectedMemberId, onSelectMember, taskCount }: FilterBarProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -35,9 +32,9 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
 
       {/* All button */}
       <button
-        onClick={() => onSelectAssignee('All')}
+        onClick={() => onSelectMember('All')}
         className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all ${
-          selectedAssignee === 'All'
+          selectedMemberId === 'All'
             ? 'bg-brand-accent text-white border-brand-accent'
             : 'text-slate-400 border-brand-border hover:border-brand-accent/60 bg-brand-card'
         }`}
@@ -45,26 +42,24 @@ export default function FilterBar({ assignees, selectedAssignee, onSelectAssigne
         All
       </button>
 
-      {/* Dynamic assignee buttons */}
-      {assignees.map((assignee, index) => {
-        const palette = getAssigneeColor(assignee.name, index)
-        const isActive = selectedAssignee === assignee.name
+      {/* Dynamic team member buttons */}
+      {teamMembers.map((member) => {
+        const colors = getMemberColor(member.firstName)
+        const isActive = selectedMemberId === member.id
         return (
           <button
-            key={assignee.name}
-            onClick={() => onSelectAssignee(assignee.name)}
+            key={member.id}
+            onClick={() => onSelectMember(member.id)}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border transition-all bg-brand-card ${
-              isActive
-                ? `${palette.activeBg} text-white border-transparent`
-                : `${palette.color} ${palette.border} ${palette.hoverBorder}`
+              isActive ? colors.active : colors.inactive
             }`}
           >
             <div
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${palette.avatar}`}
+              className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${colors.avatar}`}
             >
-              {assignee.name.slice(0, 1).toUpperCase()}
+              {member.firstName.slice(0, 1)}
             </div>
-            {assignee.name}
+            {member.firstName}
           </button>
         )
       })}
