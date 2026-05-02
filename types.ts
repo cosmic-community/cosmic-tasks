@@ -18,6 +18,13 @@ export interface Task {
   modified_at: string
 }
 
+export interface TeamMember {
+  id: string
+  slug: string
+  title: string
+  firstName: string
+}
+
 export interface CosmicContact {
   id: string
   title: string

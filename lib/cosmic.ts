@@ -1,5 +1,7 @@
 import { createBucketClient } from '@cosmicjs/sdk'
-import type { Task } from '@/types'
+import type { Task, TeamMember } from '@/types'
+
+export type { TeamMember }
 
 export const cosmic = createBucketClient({
   bucketSlug: process.env.COSMIC_BUCKET_SLUG as string,
@@ -29,11 +31,17 @@ function hasStatus(error: unknown): error is { status: number } {
   return typeof error === 'object' && error !== null && 'status' in error
 }
 
-export interface TeamMember {
-  id: string
-  slug: string
-  title: string
-  firstName: string
+export async function getTasks(): Promise<Task[]> {
+  try {
+    const response = await cosmic.objects
+      .find({ type: 'tasks' })
+      .props(['id', 'slug', 'title', 'metadata', 'created_at', 'modified_at'])
+      .depth(1)
+    return response.objects as Task[]
+  } catch (error) {
+    if (hasStatus(error) && error.status === 404) return []
+    throw error
+  }
 }
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
@@ -42,26 +50,13 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       .find({ type: 'team-members' })
       .props(['id', 'slug', 'title'])
       .depth(0)
-    return (response.objects as { id: string; slug: string; title: string }[]).map((m) => ({
+    return (response.objects as Array<{ id: string; slug: string; title: string }>).map((m) => ({
       id: m.id,
       slug: m.slug,
       title: m.title,
       // Fallback to full title if split returns undefined (noUncheckedIndexedAccess)
       firstName: m.title.trim().split(' ')[0] ?? m.title.trim(),
     }))
-  } catch (error) {
-    if (hasStatus(error) && error.status === 404) return []
-    throw error
-  }
-}
-
-export async function getTasks(): Promise<Task[]> {
-  try {
-    const response = await cosmic.objects
-      .find({ type: 'tasks' })
-      .props(['id', 'slug', 'title', 'metadata', 'created_at', 'modified_at'])
-      .depth(1)
-    return response.objects as Task[]
   } catch (error) {
     if (hasStatus(error) && error.status === 404) return []
     throw error

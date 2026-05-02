@@ -12,8 +12,7 @@ import {
   DragOverlay,
   closestCorners,
 } from '@dnd-kit/core'
-import type { Task, ColumnId } from '@/types'
-import type { TeamMember } from '@/lib/cosmic'
+import type { Task, ColumnId, TeamMember } from '@/types'
 import { COLUMNS } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 import KanbanColumn from '@/components/KanbanColumn'
@@ -104,6 +103,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
     const currentStatus = getMetafieldValue(draggedTask.metadata?.task_status)
     if (currentStatus === targetColumn) return
 
+    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === activeId
@@ -154,6 +154,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+      {/* Filter Bar - dynamic team members */}
       <FilterBar
         teamMembers={teamMembers}
         selectedMemberId={selectedMemberId}
@@ -161,6 +162,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         taskCount={totalVisible}
       />
 
+      {/* Kanban Columns */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -184,6 +186,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         </DragOverlay>
       </DndContext>
 
+      {/* Empty State */}
       {totalVisible === 0 && (
         <div className="text-center py-16 text-slate-500 animate-fade-in">
           <div className="text-4xl mb-3">📋</div>

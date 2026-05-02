@@ -1,6 +1,6 @@
 'use client'
 
-import type { TeamMember } from '@/lib/cosmic'
+import type { TeamMember } from '@/types'
 
 // Generate a consistent color based on the member's name
 function getMemberColor(firstName: string): { active: string; inactive: string; avatar: string } {
@@ -58,7 +58,7 @@ export default function FilterBar({ teamMembers, selectedMemberId, onSelectMembe
             <div
               className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold ${colors.avatar}`}
             >
-              {member.firstName.slice(0, 1)}
+              {member.firstName.slice(0, 1).toUpperCase()}
             </div>
             {member.firstName}
           </button>
