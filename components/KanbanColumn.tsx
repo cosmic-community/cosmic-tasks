@@ -9,9 +9,10 @@ interface KanbanColumnProps {
   column: Column
   tasks: Task[]
   updatingTaskIds: Set<string>
+  onOpenModal: (task: Task) => void
 }
 
-export default function KanbanColumn({ column, tasks, updatingTaskIds }: KanbanColumnProps) {
+export default function KanbanColumn({ column, tasks, updatingTaskIds, onOpenModal }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   })
@@ -48,6 +49,7 @@ export default function KanbanColumn({ column, tasks, updatingTaskIds }: KanbanC
                 key={task.id}
                 task={task}
                 isUpdating={updatingTaskIds.has(task.id)}
+                onOpenModal={onOpenModal}
               />
             ))}
           </div>

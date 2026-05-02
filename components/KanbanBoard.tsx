@@ -18,13 +18,13 @@ import { getMetafieldValue } from '@/lib/cosmic'
 import KanbanColumn from '@/components/KanbanColumn'
 import TaskCard from '@/components/TaskCard'
 import FilterBar from '@/components/FilterBar'
+import TaskModal from '@/components/TaskModal'
 
 interface KanbanBoardProps {
   initialTasks: Task[]
   teamMembers: TeamMember[]
 }
 
-// Resolve assigned_to field to a team member ID
 function getAssigneeId(assigned_to: Task['metadata']['assigned_to']): string {
   if (!assigned_to) return ''
   if (typeof assigned_to === 'object' && 'id' in assigned_to) {
@@ -39,6 +39,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<string>('All')
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set())
+  const [modalTask, setModalTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -103,7 +104,6 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
     const currentStatus = getMetafieldValue(draggedTask.metadata?.task_status)
     if (currentStatus === targetColumn) return
 
-    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === activeId
@@ -153,51 +153,54 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
   )
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
-      {/* Filter Bar - dynamic team members */}
-      <FilterBar
-        teamMembers={teamMembers}
-        selectedMemberId={selectedMemberId}
-        onSelectMember={setSelectedMemberId}
-        taskCount={totalVisible}
-      />
+    <>
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+        <FilterBar
+          teamMembers={teamMembers}
+          selectedMemberId={selectedMemberId}
+          onSelectMember={setSelectedMemberId}
+          taskCount={totalVisible}
+        />
 
-      {/* Kanban Columns */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {COLUMNS.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              tasks={getTasksByColumn(column.id)}
-              updatingTaskIds={updatingTaskIds}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            {COLUMNS.map((column) => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                tasks={getTasksByColumn(column.id)}
+                updatingTaskIds={updatingTaskIds}
+                onOpenModal={setModalTask}
+              />
+            ))}
+          </div>
 
-        <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay>
+            {activeTask ? <TaskCard task={activeTask} isOverlay /> : null}
+          </DragOverlay>
+        </DndContext>
 
-      {/* Empty State */}
-      {totalVisible === 0 && (
-        <div className="text-center py-16 text-slate-500 animate-fade-in">
-          <div className="text-4xl mb-3">📋</div>
-          <p className="font-medium">No tasks found</p>
-          <p className="text-sm mt-1">
-            {selectedMemberId !== 'All'
-              ? `No tasks assigned to ${teamMembers.find((m) => m.id === selectedMemberId)?.firstName ?? 'this person'}`
-              : 'No tasks in Cosmic CMS yet'}
-          </p>
-        </div>
-      )}
-    </div>
+        {totalVisible === 0 && (
+          <div className="text-center py-16 text-slate-500 animate-fade-in">
+            <div className="text-4xl mb-3">📋</div>
+            <p className="font-medium">No tasks found</p>
+            <p className="text-sm mt-1">
+              {selectedMemberId !== 'All'
+                ? `No tasks assigned to ${teamMembers.find((m) => m.id === selectedMemberId)?.firstName ?? 'this person'}`
+                : 'No tasks in Cosmic CMS yet'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Task Detail Modal */}
+      <TaskModal task={modalTask} onClose={() => setModalTask(null)} />
+    </>
   )
 }

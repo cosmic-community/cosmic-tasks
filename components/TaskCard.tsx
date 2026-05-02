@@ -10,6 +10,7 @@ interface TaskCardProps {
   task: Task
   isOverlay?: boolean
   isUpdating?: boolean
+  onOpenModal?: (task: Task) => void
 }
 
 const CMS_BASE = 'https://app.cosmicjs.com/cosmic-crm-production/objects'
@@ -33,7 +34,7 @@ function isOverdue(dateStr: string | undefined): boolean {
   }
 }
 
-export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps) {
+export default function TaskCard({ task, isOverlay, isUpdating, onOpenModal }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -58,7 +59,6 @@ export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps)
   const overdue = isOverdue(dueDate)
   const formattedDate = formatDate(dueDate)
 
-  // Assignee avatar initials
   const initials = assignee ? assignee.slice(0, 2).toUpperCase() : '??'
   const assigneeColor = assignee === 'Tony' ? 'bg-violet-500' : assignee === 'Jeff' ? 'bg-cyan-500' : 'bg-slate-600'
 
@@ -78,12 +78,13 @@ export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps)
       style={style}
       {...attributes}
       {...listeners}
+      onClick={() => onOpenModal?.(task)}
       className={`
         group relative bg-brand-card border border-brand-border rounded-xl p-4
-        cursor-grab active:cursor-grabbing
+        cursor-pointer
         transition-all duration-200
         hover:border-brand-accent/50 hover:shadow-card-hover
-        ${isOverlay ? 'shadow-card-hover rotate-2 opacity-95' : 'shadow-card'}
+        ${isOverlay ? 'shadow-card-hover rotate-2 opacity-95 cursor-grabbing' : 'shadow-card'}
         ${isUpdating ? 'opacity-60 pointer-events-none' : ''}
         animate-fade-in
       `}
@@ -127,24 +128,17 @@ export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps)
       {/* Footer: Priority + Due Date + Assignee */}
       <div className="flex items-center justify-between gap-2 mt-auto">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Priority badge */}
           {priorityInfo && (
-            <span
-              className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${priorityInfo.bg} ${priorityInfo.text} ${priorityInfo.border}`}
-            >
+            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${priorityInfo.bg} ${priorityInfo.text} ${priorityInfo.border}`}>
               {priorityInfo.label}
             </span>
           )}
-
-          {/* Due date */}
           {formattedDate && (
-            <span
-              className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                overdue
-                  ? 'bg-red-500/15 text-red-400 border border-red-500/30'
-                  : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
-              }`}
-            >
+            <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+              overdue
+                ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                : 'bg-slate-700/50 text-slate-400 border border-slate-600/50'
+            }`}>
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -152,8 +146,6 @@ export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps)
             </span>
           )}
         </div>
-
-        {/* Assignee avatar */}
         {assignee && (
           <div
             className={`w-6 h-6 rounded-full ${assigneeColor} flex items-center justify-center text-white text-xs font-bold shrink-0`}
