@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import type { Task, ColumnId } from '@/types'
-import { COLUMNS, ASSIGNEES } from '@/types'
+import { COLUMNS, ASSIGNEES, getAssigneeName } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 import KanbanColumn from '@/components/KanbanColumn'
 import TaskCard from '@/components/TaskCard'
@@ -41,9 +41,9 @@ export default function KanbanBoard({ initialTasks }: KanbanBoardProps) {
       return tasks.filter((task) => {
         const status = getMetafieldValue(task.metadata?.task_status)
         const statusMatch = status === columnId
+        const assigneeName = getAssigneeName(task.metadata?.assigned_to)
         const assigneeMatch =
-          selectedAssignee === 'All' ||
-          (task.metadata?.assigned_to?.trim() || '') === selectedAssignee
+          selectedAssignee === 'All' || assigneeName === selectedAssignee
         return statusMatch && assigneeMatch
       })
     },

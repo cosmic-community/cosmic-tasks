@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task } from '@/types'
-import { PRIORITY_CONFIG } from '@/types'
+import { PRIORITY_CONFIG, getAssigneeName } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
 
 interface TaskCardProps {
@@ -52,7 +52,7 @@ export default function TaskCard({ task, isOverlay, isUpdating }: TaskCardProps)
   const priorityKey = priorityRaw.toLowerCase()
   const priorityInfo = PRIORITY_CONFIG[priorityRaw] || PRIORITY_CONFIG[priorityKey]
 
-  const assignee = task.metadata?.assigned_to?.trim() || ''
+  const assignee = getAssigneeName(task.metadata?.assigned_to)
   const dueDate = task.metadata?.due_date
   const notes = task.metadata?.notes
   const overdue = isOverdue(dueDate)
