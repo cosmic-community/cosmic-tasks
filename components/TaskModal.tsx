@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
 import type { Task } from '@/types'
 import { PRIORITY_CONFIG, getAssigneeName, getAssigneeInitials } from '@/types'
 import { getMetafieldValue } from '@/lib/cosmic'
@@ -88,7 +89,7 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
       }}
     >
       <div
-        className="relative w-full max-w-lg bg-brand-card border border-brand-border rounded-2xl shadow-2xl animate-fade-in"
+        className="relative w-full max-w-2xl bg-brand-card border border-brand-border rounded-2xl shadow-2xl animate-fade-in"
         style={{ maxHeight: '90vh', overflowY: 'auto' }}
       >
         {/* Close button */}
@@ -185,11 +186,13 @@ export default function TaskModal({ task, onClose }: TaskModalProps) {
               </div>
             )}
 
-            {/* Notes */}
+            {/* Notes - rendered as markdown */}
             {notes && (
               <div className="flex items-start gap-3">
                 <span className="text-xs text-slate-500 uppercase tracking-wider w-24 shrink-0 pt-0.5">Notes</span>
-                <p className="text-sm text-slate-300 leading-relaxed flex-1">{notes}</p>
+                <div className="text-sm text-slate-300 leading-relaxed flex-1 prose prose-invert prose-sm max-w-none prose-p:my-1.5 prose-headings:text-white prose-headings:mt-3 prose-headings:mb-1.5 prose-strong:text-white prose-a:text-brand-accent prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-code:text-amber-300 prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs">
+                  <ReactMarkdown>{notes}</ReactMarkdown>
+                </div>
               </div>
             )}
 
