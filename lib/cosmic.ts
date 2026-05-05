@@ -68,3 +68,18 @@ export async function updateTaskStatus(taskId: string, newStatus: string): Promi
     metadata: { task_status: newStatus },
   })
 }
+
+export interface TaskUpdatePayload {
+  title?: string
+  metadata?: {
+    task_status?: string
+    notes?: string
+    priority?: string
+    due_date?: string | null
+    title?: string
+  }
+}
+
+export async function updateTask(taskId: string, updates: TaskUpdatePayload): Promise<void> {
+  await cosmic.objects.updateOne(taskId, updates)
+}

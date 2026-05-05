@@ -61,6 +61,35 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
     [tasks, selectedMemberId]
   )
 
+  // Handle task updates from modal
+  const handleTaskUpdate = useCallback((taskId: string, updates: Partial<Task>) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== taskId) return t
+        return {
+          ...t,
+          ...(updates.title ? { title: updates.title } : {}),
+          metadata: {
+            ...t.metadata,
+            ...(updates.metadata || {}),
+          },
+        }
+      })
+    )
+    // Also update the modal task so it reflects changes immediately
+    setModalTask((prev) => {
+      if (!prev || prev.id !== taskId) return prev
+      return {
+        ...prev,
+        ...(updates.title ? { title: updates.title } : {}),
+        metadata: {
+          ...prev.metadata,
+          ...(updates.metadata || {}),
+        },
+      }
+    })
+  }, [])
+
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id)
     if (task) setActiveTask(task)
@@ -200,7 +229,11 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
       </div>
 
       {/* Task Detail Modal */}
-      <TaskModal task={modalTask} onClose={() => setModalTask(null)} />
+      <TaskModal
+        task={modalTask}
+        onClose={() => setModalTask(null)}
+        onUpdate={handleTaskUpdate}
+      />
     </>
   )
 }
