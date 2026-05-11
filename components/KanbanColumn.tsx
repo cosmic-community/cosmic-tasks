@@ -10,9 +10,10 @@ interface KanbanColumnProps {
   tasks: Task[]
   updatingTaskIds: Set<string>
   onOpenModal: (task: Task) => void
+  onCreateTask: () => void
 }
 
-export default function KanbanColumn({ column, tasks, updatingTaskIds, onOpenModal }: KanbanColumnProps) {
+export default function KanbanColumn({ column, tasks, updatingTaskIds, onOpenModal, onCreateTask }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   })
@@ -29,9 +30,20 @@ export default function KanbanColumn({ column, tasks, updatingTaskIds, onOpenMod
             {column.label}
           </h2>
         </div>
-        <span className="text-xs font-medium text-slate-500 bg-brand-card border border-brand-border rounded-full px-2 py-0.5">
-          {tasks.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 bg-brand-card border border-brand-border rounded-full px-2 py-0.5">
+            {tasks.length}
+          </span>
+          <button
+            onClick={onCreateTask}
+            className="p-1 rounded-md text-slate-500 hover:text-brand-accent hover:bg-brand-accent/10 transition-all"
+            title="Add task"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Drop Zone */}
@@ -56,10 +68,13 @@ export default function KanbanColumn({ column, tasks, updatingTaskIds, onOpenMod
         </SortableContext>
 
         {tasks.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-24 text-slate-600 text-sm">
+          <button
+            onClick={onCreateTask}
+            className="flex flex-col items-center justify-center h-24 w-full text-slate-600 text-sm rounded-lg hover:bg-white/5 hover:text-slate-400 transition-colors"
+          >
             <span className="text-lg mb-1">+</span>
-            Drop tasks here
-          </div>
+            Add a task
+          </button>
         )}
       </div>
     </div>

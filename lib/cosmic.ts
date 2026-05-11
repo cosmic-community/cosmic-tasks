@@ -63,6 +63,42 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
   }
 }
 
+export interface SelectOption {
+  id: string
+  slug: string
+  title: string
+}
+
+export async function getContacts(): Promise<SelectOption[]> {
+  try {
+    const response = await cosmic.objects
+      .find({ type: 'contacts' })
+      .props(['id', 'slug', 'title'])
+      .depth(0)
+      .sort('-created_at')
+      .limit(100)
+    return response.objects as SelectOption[]
+  } catch (error) {
+    if (hasStatus(error) && error.status === 404) return []
+    throw error
+  }
+}
+
+export async function getCompanies(): Promise<SelectOption[]> {
+  try {
+    const response = await cosmic.objects
+      .find({ type: 'companies' })
+      .props(['id', 'slug', 'title'])
+      .depth(0)
+      .sort('-created_at')
+      .limit(100)
+    return response.objects as SelectOption[]
+  } catch (error) {
+    if (hasStatus(error) && error.status === 404) return []
+    throw error
+  }
+}
+
 export async function updateTaskStatus(taskId: string, newStatus: string): Promise<void> {
   await cosmic.objects.updateOne(taskId, {
     metadata: { task_status: newStatus },
@@ -82,4 +118,27 @@ export interface TaskUpdatePayload {
 
 export async function updateTask(taskId: string, updates: TaskUpdatePayload): Promise<void> {
   await cosmic.objects.updateOne(taskId, updates)
+}
+
+export interface CreateTaskPayload {
+  title: string
+  metadata: {
+    title: string
+    task_status: string
+    priority?: string
+    due_date?: string
+    notes?: string
+    assigned_to?: string
+    contact?: string
+    company?: string
+  }
+}
+
+export async function createTask(payload: CreateTaskPayload): Promise<Task> {
+  const response = await cosmic.objects.insertOne({
+    type: 'tasks',
+    title: payload.title,
+    metadata: payload.metadata,
+  })
+  return response.object as Task
 }

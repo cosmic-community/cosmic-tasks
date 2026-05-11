@@ -32,9 +32,10 @@ interface FilterBarProps {
   selectedMemberId: string
   onSelectMember: (memberId: string) => void
   taskCount: number
+  onCreateTask: () => void
 }
 
-export default function FilterBar({ teamMembers, selectedMemberId, onSelectMember, taskCount }: FilterBarProps) {
+export default function FilterBar({ teamMembers, selectedMemberId, onSelectMember, taskCount, onCreateTask }: FilterBarProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -77,9 +78,20 @@ export default function FilterBar({ teamMembers, selectedMemberId, onSelectMembe
         )
       })}
 
-      <span className="ml-auto text-xs text-slate-500">
-        {taskCount} task{taskCount !== 1 ? 's' : ''}
-      </span>
+      <div className="ml-auto flex items-center gap-3">
+        <span className="text-xs text-slate-500">
+          {taskCount} task{taskCount !== 1 ? 's' : ''}
+        </span>
+        <button
+          onClick={onCreateTask}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium bg-brand-accent text-white hover:bg-brand-accent/80 transition-colors shadow-glow"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          New Task
+        </button>
+      </div>
     </div>
   )
 }

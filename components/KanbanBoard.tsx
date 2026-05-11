@@ -19,6 +19,8 @@ import KanbanColumn from '@/components/KanbanColumn'
 import TaskCard from '@/components/TaskCard'
 import FilterBar from '@/components/FilterBar'
 import TaskModal from '@/components/TaskModal'
+import CreateTaskModal from '@/components/CreateTaskModal'
+import type { NewTaskData } from '@/components/CreateTaskModal'
 
 interface KanbanBoardProps {
   initialTasks: Task[]
@@ -40,6 +42,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
   const [selectedMemberId, setSelectedMemberId] = useState<string>('All')
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set())
   const [modalTask, setModalTask] = useState<Task | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,6 +91,34 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         },
       }
     })
+  }, [])
+
+  // Handle creating a new task
+  const handleCreateTask = useCallback(async (data: NewTaskData) => {
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Unknown error' })) as { error?: string }
+        console.error('Failed to create task:', err.error)
+        return
+      }
+
+      // Refresh the full task list so we get properly resolved relationships
+      const tasksRes = await fetch('/api/tasks')
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json() as { tasks: Task[] }
+        setTasks(tasksData.tasks)
+      }
+
+      setShowCreateModal(false)
+    } catch (err) {
+      console.error('Error creating task:', err)
+    }
   }, [])
 
   function handleDragStart(event: DragStartEvent) {
@@ -189,6 +220,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
           selectedMemberId={selectedMemberId}
           onSelectMember={setSelectedMemberId}
           taskCount={totalVisible}
+          onCreateTask={() => setShowCreateModal(true)}
         />
 
         <DndContext
@@ -206,6 +238,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
                 tasks={getTasksByColumn(column.id)}
                 updatingTaskIds={updatingTaskIds}
                 onOpenModal={setModalTask}
+                onCreateTask={() => setShowCreateModal(true)}
               />
             ))}
           </div>
@@ -224,6 +257,12 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
                 ? `No tasks assigned to ${teamMembers.find((m) => m.id === selectedMemberId)?.firstName ?? 'this person'}`
                 : 'No tasks in Cosmic CMS yet'}
             </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 px-4 py-2 text-sm font-medium rounded-lg bg-brand-accent text-white hover:bg-brand-accent/80 transition-colors"
+            >
+              + Create your first task
+            </button>
           </div>
         )}
       </div>
@@ -233,6 +272,14 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         task={modalTask}
         onClose={() => setModalTask(null)}
         onUpdate={handleTaskUpdate}
+      />
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreate={handleCreateTask}
+        teamMembers={teamMembers}
       />
     </>
   )
