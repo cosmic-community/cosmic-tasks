@@ -1,7 +1,7 @@
 // app/api/tasks/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { updateTask } from '@/lib/cosmic'
+import { updateTask, deleteTask } from '@/lib/cosmic'
 
 export async function PATCH(
   request: NextRequest,
@@ -51,5 +51,27 @@ export async function PATCH(
   } catch (error) {
     console.error('Error updating task:', error)
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const cookieStore = await cookies()
+  const isAuthenticated = cookieStore.get('auth_token')?.value === 'authenticated'
+
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  try {
+    await deleteTask(id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting task:', error)
+    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 })
   }
 }
