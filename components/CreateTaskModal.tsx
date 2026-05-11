@@ -213,7 +213,7 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
             >
               <option value="" className="bg-slate-800">Unassigned</option>
               {teamMembers.map((m) => (
-                <option key={m.id} value={m.slug} className="bg-slate-800">
+                <option key={m.id} value={m.id} className="bg-slate-800">
                   {m.title}
                 </option>
               ))}
@@ -231,7 +231,7 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
               >
                 <option value="" className="bg-slate-800">None</option>
                 {contacts.map((c) => (
-                  <option key={c.id} value={c.slug} className="bg-slate-800">
+                  <option key={c.id} value={c.id} className="bg-slate-800">
                     {c.title}
                   </option>
                 ))}
@@ -246,7 +246,7 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
               >
                 <option value="" className="bg-slate-800">None</option>
                 {companies.map((c) => (
-                  <option key={c.id} value={c.slug} className="bg-slate-800">
+                  <option key={c.id} value={c.id} className="bg-slate-800">
                     {c.title}
                   </option>
                 ))}
