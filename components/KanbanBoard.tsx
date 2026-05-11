@@ -79,7 +79,6 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         }
       })
     )
-    // Also update the modal task so it reflects changes immediately
     setModalTask((prev) => {
       if (!prev || prev.id !== taskId) return prev
       return {
@@ -91,6 +90,12 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         },
       }
     })
+  }, [])
+
+  // Handle task deletion
+  const handleTaskDelete = useCallback((taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    setModalTask(null)
   }, [])
 
   // Handle creating a new task
@@ -272,6 +277,7 @@ export default function KanbanBoard({ initialTasks, teamMembers }: KanbanBoardPr
         task={modalTask}
         onClose={() => setModalTask(null)}
         onUpdate={handleTaskUpdate}
+        onDelete={handleTaskDelete}
       />
 
       {/* Create Task Modal */}

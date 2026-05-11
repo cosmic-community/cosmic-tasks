@@ -2,14 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { TeamMember } from '@/types'
-import { PRIORITY_CONFIG } from '@/types'
-
-interface SelectOption {
-  id: string
-  slug: string
-  title: string
-  firstName?: string
-}
+import SearchSelect from '@/components/SearchSelect'
 
 interface CreateTaskModalProps {
   open: boolean
@@ -46,14 +39,11 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
   const [notes, setNotes] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
   const [contact, setContact] = useState('')
+  const [contactName, setContactName] = useState('')
   const [company, setCompany] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
-
-  // Lazy-loaded options for contacts and companies
-  const [contacts, setContacts] = useState<SelectOption[]>([])
-  const [companies, setCompanies] = useState<SelectOption[]>([])
-  const [optionsLoaded, setOptionsLoaded] = useState(false)
 
   // Reset form when opening
   useEffect(() => {
@@ -64,30 +54,14 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
       setNotes('')
       setAssignedTo('')
       setContact('')
+      setContactName('')
       setCompany('')
+      setCompanyName('')
       setError('')
       setCreating(false)
-      // Focus title after animation frame
       requestAnimationFrame(() => titleRef.current?.focus())
     }
   }, [open])
-
-  // Fetch contacts/companies on first open
-  useEffect(() => {
-    if (open && !optionsLoaded) {
-      fetch('/api/tasks/options')
-        .then((res) => res.json())
-        .then((data: { contacts?: SelectOption[]; companies?: SelectOption[] }) => {
-          setContacts(data.contacts ?? [])
-          setCompanies(data.companies ?? [])
-          setOptionsLoaded(true)
-        })
-        .catch(() => {
-          // Silently fail; dropdowns will just be empty
-          setOptionsLoaded(true)
-        })
-    }
-  }, [open, optionsLoaded])
 
   // Keyboard handling
   useEffect(() => {
@@ -220,38 +194,24 @@ export default function CreateTaskModal({ open, onClose, onCreate, teamMembers }
             </select>
           </div>
 
-          {/* Contact + Company row */}
+          {/* Contact + Company search fields */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Contact</label>
-              <select
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                className="w-full bg-slate-800/50 border border-brand-border rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-brand-accent/50 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-slate-800">None</option>
-                {contacts.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-800">
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Company</label>
-              <select
-                value={company}
-                onChange={(e) => setCompany(e.target.value)}
-                className="w-full bg-slate-800/50 border border-brand-border rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-brand-accent/50 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="" className="bg-slate-800">None</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-800">
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SearchSelect
+              label="Contact"
+              type="contacts"
+              value={contact}
+              valueName={contactName}
+              onChange={(id, name) => { setContact(id); setContactName(name) }}
+              placeholder="Search contacts..."
+            />
+            <SearchSelect
+              label="Company"
+              type="companies"
+              value={company}
+              valueName={companyName}
+              onChange={(id, name) => { setCompany(id); setCompanyName(name) }}
+              placeholder="Search companies..."
+            />
           </div>
 
           {/* Notes */}

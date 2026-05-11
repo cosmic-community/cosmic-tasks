@@ -10,6 +10,7 @@ interface TaskModalProps {
   task: Task | null
   onClose: () => void
   onUpdate?: (taskId: string, updates: Partial<Task>) => void
+  onDelete?: (taskId: string) => void
 }
 
 const CMS_BASE = 'https://app.cosmicjs.com/cosmic-crm-production/objects'
@@ -50,7 +51,7 @@ function isOverdue(dateStr: string | undefined): boolean {
   }
 }
 
-export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
+export default function TaskModal({ task, onClose, onUpdate, onDelete }: TaskModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const notesRef = useRef<HTMLTextAreaElement>(null)
 
@@ -64,6 +65,10 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Track original values to detect changes
   const originalValues = useRef({ title: '', notes: '', priority: '', dueDate: '' })
@@ -83,6 +88,8 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
     setEditingTitle(false)
     setSaved(false)
     setHasChanges(false)
+    setShowDeleteConfirm(false)
+    setDeleting(false)
     originalValues.current = { title: t, notes: n, priority: p, dueDate: d }
   }, [task])
 
@@ -104,7 +111,6 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
       el.style.height = 'auto'
       el.style.height = Math.max(el.scrollHeight, 120) + 'px'
       el.focus()
-      // Place cursor at end
       el.setSelectionRange(el.value.length, el.value.length)
     }
   }, [editingNotes])
@@ -127,13 +133,11 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
       })
 
       if (res.ok) {
-        // Update original values so further edits are relative
         originalValues.current = { title, notes, priority, dueDate }
         setHasChanges(false)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
 
-        // Notify parent to update local state
         if (onUpdate) {
           onUpdate(task.id, {
             title,
@@ -156,6 +160,28 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
     }
   }, [task, title, notes, priority, dueDate, hasChanges, onUpdate])
 
+  const handleDelete = useCallback(async () => {
+    if (!task || !onDelete) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        onDelete(task.id)
+        onClose()
+      } else {
+        console.error('Failed to delete task')
+        setDeleting(false)
+        setShowDeleteConfirm(false)
+      }
+    } catch (err) {
+      console.error('Error deleting task:', err)
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }, [task, onDelete, onClose])
+
   const handleClose = useCallback(async () => {
     if (hasChanges) {
       await saveChanges()
@@ -167,7 +193,10 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
     if (!task) return
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // If editing notes, just exit edit mode
+        if (showDeleteConfirm) {
+          setShowDeleteConfirm(false)
+          return
+        }
         if (editingNotes) {
           setEditingNotes(false)
           return
@@ -178,7 +207,6 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
         }
         handleClose()
       }
-      // Cmd/Ctrl+S to save
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault()
         saveChanges()
@@ -190,7 +218,7 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
       document.removeEventListener('keydown', handleKey)
       document.body.style.overflow = ''
     }
-  }, [task, editingNotes, editingTitle, handleClose, saveChanges])
+  }, [task, editingNotes, editingTitle, showDeleteConfirm, handleClose, saveChanges])
 
   if (!task) return null
 
@@ -230,6 +258,54 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
         className="relative w-full max-w-2xl bg-brand-card border border-brand-border rounded-2xl shadow-2xl animate-fade-in"
         style={{ maxHeight: '90vh', overflowY: 'auto' }}
       >
+        {/* Delete confirmation overlay */}
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+            <div className="bg-brand-card border border-brand-border rounded-xl p-6 mx-6 max-w-sm w-full shadow-2xl animate-fade-in">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Delete Task</h3>
+                  <p className="text-xs text-slate-400">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-300 mb-5">
+                Are you sure you want to delete <span className="font-medium text-white">&ldquo;{task.title}&rdquo;</span>?
+              </p>
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Task'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Top bar: save indicator + close */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 pt-4 pb-2 bg-brand-card rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -239,7 +315,7 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Saving…
+                Saving...
               </span>
             )}
             {saved && !saving && (
@@ -432,12 +508,11 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
                       value={notes}
                       onChange={(e) => {
                         setNotes(e.target.value)
-                        // Auto-resize
                         const el = e.target
                         el.style.height = 'auto'
                         el.style.height = Math.max(el.scrollHeight, 120) + 'px'
                       }}
-                      placeholder="Write your notes here… (Markdown supported)"
+                      placeholder="Write your notes here... (Markdown supported)"
                       className="w-full bg-slate-800/50 border border-brand-border rounded-lg px-4 py-3 text-sm text-slate-200 leading-relaxed placeholder:text-slate-600 outline-none focus:border-brand-accent/50 transition-colors resize-none font-mono"
                       style={{ minHeight: '120px' }}
                     />
@@ -462,7 +537,7 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
                         <ReactMarkdown>{notes}</ReactMarkdown>
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-600 italic">Click to add notes…</p>
+                      <p className="text-sm text-slate-600 italic">Click to add notes...</p>
                     )}
                     <div className="opacity-0 group-hover/notes:opacity-100 transition-opacity mt-1">
                       <span className="text-xs text-slate-600">Click to edit</span>
@@ -484,17 +559,30 @@ export default function TaskModal({ task, onClose, onUpdate }: TaskModalProps) {
 
           {/* Bottom bar */}
           <div className="flex items-center justify-between">
-            <a
-              href={`${CMS_BASE}/${task.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-brand-accent transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Open in Cosmic CMS
-            </a>
+            <div className="flex items-center gap-3">
+              <a
+                href={`${CMS_BASE}/${task.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-brand-accent transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Open in Cosmic CMS
+              </a>
+              {onDelete && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              )}
+            </div>
             <span className="text-xs text-slate-600">⌘S to save</span>
           </div>
         </div>

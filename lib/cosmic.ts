@@ -54,7 +54,6 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
       id: m.id,
       slug: m.slug,
       title: m.title,
-      // Fallback to full title if split returns undefined (noUncheckedIndexedAccess)
       firstName: m.title.trim().split(' ')[0] ?? m.title.trim(),
     }))
   } catch (error) {
@@ -69,29 +68,18 @@ export interface SelectOption {
   title: string
 }
 
-export async function getContacts(): Promise<SelectOption[]> {
+export async function searchObjects(type: string, query: string, limit = 20): Promise<SelectOption[]> {
   try {
-    const response = await cosmic.objects
-      .find({ type: 'contacts' })
-      .props(['id', 'slug', 'title'])
-      .depth(0)
-      .sort('-created_at')
-      .limit(100)
-    return response.objects as SelectOption[]
-  } catch (error) {
-    if (hasStatus(error) && error.status === 404) return []
-    throw error
-  }
-}
+    const finder = query.trim()
+      ? cosmic.objects.find({ type, title: { $regex: query.trim(), $options: 'i' } })
+      : cosmic.objects.find({ type })
 
-export async function getCompanies(): Promise<SelectOption[]> {
-  try {
-    const response = await cosmic.objects
-      .find({ type: 'companies' })
+    const response = await finder
       .props(['id', 'slug', 'title'])
       .depth(0)
-      .sort('-created_at')
-      .limit(100)
+      .sort('title')
+      .limit(limit)
+
     return response.objects as SelectOption[]
   } catch (error) {
     if (hasStatus(error) && error.status === 404) return []
@@ -118,6 +106,10 @@ export interface TaskUpdatePayload {
 
 export async function updateTask(taskId: string, updates: TaskUpdatePayload): Promise<void> {
   await cosmic.objects.updateOne(taskId, updates)
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  await cosmic.objects.deleteOne(taskId)
 }
 
 export interface CreateTaskPayload {
