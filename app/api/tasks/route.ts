@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getTasks, getContacts, getCompanies, createTask } from '@/lib/cosmic'
+import { getTasks, createTask } from '@/lib/cosmic'
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
